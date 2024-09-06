@@ -1,8 +1,7 @@
-// src/App.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { useEffect, useRef, useState } from 'react';
 import OpenAI from 'openai';
 import { Configuration, NewSessionData, StreamingAvatarApi } from '@heygen/streaming-avatar';
-import { Button } from '@/components/ui/button';
 import { getAccessToken } from './services/api';
 import { Video } from './components/reusable/Video';
 import ChatMessage from './components/reusable/ChatMessage';
@@ -18,6 +17,9 @@ type ChatMessageType = {
 };
 
 function App() {
+  //Toast
+  const { toast } = useToast()
+
   const [isBegin, setIsBegin] = useState<boolean>(false);
   const [startLoading, setStartLoading] = useState<boolean>(false);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
@@ -97,6 +99,11 @@ function App() {
       })
       .catch((error) => {
         console.error('Error accessing microphone:', error);
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: error.message,
+        })
       });
   };
 
@@ -129,8 +136,13 @@ function App() {
       });
       setInput(aiResponse.choices[0].message.content || '');
       setChatMessages(prev => [...prev, { role: 'assistant', message: aiResponse.choices[0].message.content || '' }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error transcribing audio:', error);
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: error.message,
+      })
     }
   }
 
@@ -150,16 +162,21 @@ function App() {
       try {
         const response = await getAccessToken();
         const token = response.data.data.token;
-        
+
         if (!avatar.current) {
           avatar.current = new StreamingAvatarApi(
             new Configuration({ accessToken: token })
           );
-         
+
         }
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching access token:", error);
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: error.message,
+        })
       }
     }
 
@@ -183,14 +200,19 @@ function App() {
       setStartLoading(false);
       setIsBegin(true);
 
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: error.message,
+      })
     }
   };
 
-  async function stop() {
-    await avatar.current?.stopAvatar({ stopSessionRequest: { sessionId: data?.sessionId } });
-  }
+  // async function stop() {
+  //   await avatar.current?.stopAvatar({ stopSessionRequest: { sessionId: data?.sessionId } });
+  // }
 
   useEffect(() => {
     if (selectedPrompt) {
@@ -205,6 +227,11 @@ function App() {
         setInput(aiResponse.choices[0].message.content || '');
       }).catch(error => {
         console.log(error);
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: error.message,
+        })
       })
 
     }
@@ -230,41 +257,41 @@ function App() {
       </div>
 
     ) : (
-    <div className="flex flex-col items-center justify-center p-4 max-w-[1200px] mx-auto">
-      <div className='adjustableHeight'>
-        <Video ref={mediaStream} />
-        {
-          chatMessages.length > 0 && (
-            <ScrollableFeed>
-              <div className="flex-1 p-4 overflow-y-auto  w-[100%] bg-gray-50 rounded-3xl my-5 h-[400px]">
-                {
-                  chatMessages.map((chatMsg, index) => (
-                    <ChatMessage
-                      key={index}
-                      role={chatMsg.role}
-                      message={chatMsg.message}
-                    />
-                  ))
-                }
+      <div className="flex flex-col items-center justify-center p-4 max-w-[1200px] mx-auto">
+        <div className='adjustableHeight'>
+          <Video ref={mediaStream} />
+          {
+            chatMessages.length > 0 && (
+              <ScrollableFeed>
+                <div className="flex-1 p-4 overflow-y-auto  w-[100%] bg-gray-50 rounded-3xl my-5 h-[400px]">
+                  {
+                    chatMessages.map((chatMsg, index) => (
+                      <ChatMessage
+                        key={index}
+                        role={chatMsg.role}
+                        message={chatMsg.message}
+                      />
+                    ))
+                  }
 
-              </div>
-            </ScrollableFeed>
-          )
-        }
+                </div>
+              </ScrollableFeed>
+            )
+          }
+        </div>
+
+        <div className='bg-gray-50 flex flex-col justify-center fixed bottom-0 p-2 w-full rounded-lg z-10'>
+
+          <Badges
+            setSelectedPrompt={setSelectedPrompt}
+          />
+          <MicButton
+            isSpeaking={isSpeaking}
+            onClick={isSpeaking ? handleStopSpeaking : handleStartSpeaking}
+          />
+        </div>
+        {/* <Button onClick={stop}>Stop Avatar</Button> */}
       </div>
-
-      <div className='bg-gray-50 flex flex-col justify-center fixed bottom-0 p-2 w-full rounded-lg z-10'>
-
-        <Badges
-          setSelectedPrompt={setSelectedPrompt}
-        />
-        <MicButton
-          isSpeaking={isSpeaking}
-          onClick={isSpeaking ? handleStopSpeaking : handleStartSpeaking}
-        />
-      </div>
-      {/* <Button onClick={stop}>Stop Avatar</Button> */}
-    </div>
     )
   );
 }
