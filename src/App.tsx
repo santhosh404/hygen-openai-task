@@ -1,4 +1,5 @@
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from 'react';
 import OpenAI from 'openai';
 import { Configuration, NewSessionData, StreamingAvatarApi } from '@heygen/streaming-avatar';
@@ -9,7 +10,7 @@ import MicButton from './components/reusable/MicButton';
 import { LandingComponent } from './components/reusable/LandingComponent';
 import ScrollableFeed from 'react-scrollable-feed';
 import { Badges } from './components/reusable/Badges';
-
+import { Toaster } from "@/components/ui/toaster"
 
 type ChatMessageType = {
   role: string;
@@ -175,7 +176,7 @@ function App() {
         toast({
           variant: "destructive",
           title: "Uh oh! Something went wrong.",
-          description: error.message,
+          description: error.response.data.message || error.message,
         })
       }
     }
@@ -248,51 +249,60 @@ function App() {
   }, [stream]);
 
   return (
-    !isBegin ? (
-      <div>
-        <LandingComponent
-          grab={grab}
-          startLoading={startLoading}
-        />
-      </div>
+    <>
+      <Toaster />
+      {
+        !isBegin ? (
+          <div>
+            <LandingComponent
+              grab={grab}
+              startLoading={startLoading}
+            />
 
-    ) : (
-      <div className="flex flex-col items-center justify-center p-4 max-w-[1200px] mx-auto">
-        <div className='adjustableHeight'>
-          <Video ref={mediaStream} />
-          {
-            chatMessages.length > 0 && (
-              <ScrollableFeed>
-                <div className="flex-1 p-4 overflow-y-auto  w-[100%] bg-gray-50 rounded-3xl my-5 h-[400px]">
-                  {
-                    chatMessages.map((chatMsg, index) => (
-                      <ChatMessage
-                        key={index}
-                        role={chatMsg.role}
-                        message={chatMsg.message}
-                      />
-                    ))
-                  }
+          </div>
 
-                </div>
-              </ScrollableFeed>
-            )
-          }
-        </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-4 max-w-[1200px] mx-auto">
+            <div className='adjustableHeight'>
+              <Video ref={mediaStream} />
+              {
+                chatMessages.length > 0 && (
+                  <ScrollableFeed>
+                    <div className="flex-1 p-4 overflow-y-auto  w-[100%] bg-gray-50 rounded-3xl my-5 h-[400px]">
+                      {
+                        chatMessages.map((chatMsg, index) => (
+                          <ChatMessage
+                            key={index}
+                            role={chatMsg.role}
+                            message={chatMsg.message}
+                          />
+                        ))
+                      }
 
-        <div className='bg-gray-50 flex flex-col justify-center fixed bottom-0 p-2 w-full rounded-lg z-10'>
+                    </div>
+                  </ScrollableFeed>
+                )
+              }
+            </div>
 
-          <Badges
-            setSelectedPrompt={setSelectedPrompt}
-          />
-          <MicButton
-            isSpeaking={isSpeaking}
-            onClick={isSpeaking ? handleStopSpeaking : handleStartSpeaking}
-          />
-        </div>
-        {/* <Button onClick={stop}>Stop Avatar</Button> */}
-      </div>
-    )
+            <div className='bg-gray-50 flex flex-col justify-center fixed bottom-0 p-2 w-full rounded-lg z-10'>
+
+              <Badges
+                setSelectedPrompt={setSelectedPrompt}
+              />
+              <MicButton
+                isSpeaking={isSpeaking}
+                onClick={isSpeaking ? handleStopSpeaking : handleStartSpeaking}
+              />
+            </div>
+            {/* <Button onClick={stop}>Stop Avatar</Button> */}
+          </div>
+        )
+      }
+
+
+    </>
+
   );
 }
 
