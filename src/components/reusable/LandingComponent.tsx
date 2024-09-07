@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2 } from "lucide-react"
 
-interface LandingPageProps {
+type LandingPageProps = {
     grab: () => void;
     startLoading: boolean;
 }

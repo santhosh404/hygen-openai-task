@@ -1,5 +1,4 @@
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from 'react';
 import OpenAI from 'openai';
 import { Configuration, NewSessionData, StreamingAvatarApi } from '@heygen/streaming-avatar';
