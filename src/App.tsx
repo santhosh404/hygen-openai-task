@@ -56,11 +56,11 @@ function App() {
 
   ]);
 
-  // const apiKey: any = import.meta.env.VITE_OPENAI_API_KEY;
-  // const openai = new OpenAI({
-  //   apiKey: apiKey,
-  //   dangerouslyAllowBrowser: true,
-  // });
+  const apiKey: any = import.meta.env.VITE_OPENAI_API_KEY;
+  const openai = new OpenAI({
+    apiKey: apiKey,
+    dangerouslyAllowBrowser: true,
+  });
 
   const handleStartSpeaking = () => {
 
