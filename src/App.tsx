@@ -20,7 +20,7 @@ function App() {
   //Toast
   const { toast } = useToast()
 
-  const [isBegin, setIsBegin] = useState<boolean>(false);
+  const [isBegin, setIsBegin] = useState<boolean>(true);
   const [startLoading, setStartLoading] = useState<boolean>(false);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
@@ -32,37 +32,38 @@ function App() {
   const mediaStream = useRef<HTMLVideoElement>(null);
   const avatar = useRef<StreamingAvatarApi | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessageType[]>([
-    // {
-    //   role: 'user',
-    //   message: 'hi, how are you!'
-    // },
-    // {
-    //   role: 'assistant',
-    //   message: 'I am fine, Thank you for asking. How about you!'
-    // },
-    // {
-    //   role: 'user',
-    //   message: 'Explain me about python!'
-    // },
-    // {
-    //   role: 'assistant',
-    //   message: "Python is an interpreted, object-oriented, high-level programming language with dynamic semantics. Its high-level built in data structures, combined with dynamic typing and dynamic binding, make it very attractive for Rapid Application Development, as well as for use as a scripting or glue language to connect existing components together. Python's simple, easy to learn syntax emphasizes readability and therefore reduces the cost of program maintenance. Python supports modules and packages, which encourages program modularity and code reuse. The Python interpreter and the extensive standard library are available in source or binary form without charge for all major platforms, and can be freely distributed."
-    // },
-    // {
-    //   role: 'user',
-    //   message: 'hi, how are you!'
-    // },
+    {
+      role: 'user',
+      message: 'hi, how are you!'
+    },
+    {
+      role: 'assistant',
+      message: 'I am fine, Thank you for asking. How about you!'
+    },
+    {
+      role: 'user',
+      message: 'Explain me about python!'
+    },
+    {
+      role: 'assistant',
+      message: "Python is an interpreted, object-oriented, high-level programming language with dynamic semantics. Its high-level built in data structures, combined with dynamic typing and dynamic binding, make it very attractive for Rapid Application Development, as well as for use as a scripting or glue language to connect existing components together. Python's simple, easy to learn syntax emphasizes readability and therefore reduces the cost of program maintenance. Python supports modules and packages, which encourages program modularity and code reuse. The Python interpreter and the extensive standard library are available in source or binary form without charge for all major platforms, and can be freely distributed."
+    },
+    {
+      role: 'user',
+      message: 'hi, how are you!'
+    },
 
 
   ]);
 
-  const apiKey: any = import.meta.env.VITE_OPENAI_API_KEY;
-  const openai = new OpenAI({
-    apiKey: apiKey,
-    dangerouslyAllowBrowser: true,
-  });
+  // const apiKey: any = import.meta.env.VITE_OPENAI_API_KEY;
+  // const openai = new OpenAI({
+  //   apiKey: apiKey,
+  //   dangerouslyAllowBrowser: true,
+  // });
 
   const handleStartSpeaking = () => {
+
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then((stream) => {
         mediaRecorder.current = new MediaRecorder(stream);
@@ -247,6 +248,12 @@ function App() {
 
         ) : (
           <div className="flex flex-col items-center justify-center p-4 max-w-[1200px] mx-auto">
+            {/* {audioSrc && (
+              <audio controls>
+                <source src={audioSrc} type="audio/wav" />
+                Your browser does not support the audio element.
+              </audio>
+            )} */}
             <div className='adjustableHeight'>
               <Video ref={mediaStream} />
               {
