@@ -55,7 +55,6 @@ function App() {
 
 
   ]);
-  const silenceTimeout = useRef<number | null>(null);
 
   const apiKey: any = import.meta.env.VITE_OPENAI_API_KEY;
   const openai = new OpenAI({
@@ -67,31 +66,17 @@ function App() {
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then((stream) => {
         mediaRecorder.current = new MediaRecorder(stream);
-        let hasStopped = false; // Flag to prevent multiple transcriptions
 
         mediaRecorder.current.ondataavailable = (event) => {
           audioChunks.current.push(event.data);
-          if (silenceTimeout.current) {
-            clearTimeout(silenceTimeout.current);
-          }
-
-          // Set timeout to stop recording after 3 seconds of silence
-          silenceTimeout.current = window.setTimeout(() => {
-            if (!hasStopped) {
-              handleStopSpeaking();
-            }
-          }, 3000); // 3 seconds of silence
         };
 
         mediaRecorder.current.onstop = () => {
-          if (!hasStopped) {
-            const audioBlob = new Blob(audioChunks.current, {
-              type: 'audio/wav',
-            });
-            audioChunks.current = [];
-            transcribeAudio(audioBlob);
-            hasStopped = true; // Set flag to true after the first API call
-          }
+          const audioBlob = new Blob(audioChunks.current, {
+            type: 'audio/wav',
+          });
+          audioChunks.current = [];
+          transcribeAudio(audioBlob);
         };
 
         mediaRecorder.current.start();
