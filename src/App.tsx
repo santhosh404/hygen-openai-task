@@ -20,7 +20,7 @@ function App() {
   //Toast
   const { toast } = useToast()
 
-  const [isBegin, setIsBegin] = useState<boolean>(true);
+  const [isBegin, setIsBegin] = useState<boolean>(false);
   const [startLoading, setStartLoading] = useState<boolean>(false);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
@@ -32,26 +32,26 @@ function App() {
   const mediaStream = useRef<HTMLVideoElement>(null);
   const avatar = useRef<StreamingAvatarApi | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessageType[]>([
-    {
-      role: 'user',
-      message: 'hi, how are you!'
-    },
-    {
-      role: 'assistant',
-      message: 'I am fine, Thank you for asking. How about you!'
-    },
-    {
-      role: 'user',
-      message: 'Explain me about python!'
-    },
-    {
-      role: 'assistant',
-      message: "Python is an interpreted, object-oriented, high-level programming language with dynamic semantics. Its high-level built in data structures, combined with dynamic typing and dynamic binding, make it very attractive for Rapid Application Development, as well as for use as a scripting or glue language to connect existing components together. Python's simple, easy to learn syntax emphasizes readability and therefore reduces the cost of program maintenance. Python supports modules and packages, which encourages program modularity and code reuse. The Python interpreter and the extensive standard library are available in source or binary form without charge for all major platforms, and can be freely distributed."
-    },
-    {
-      role: 'user',
-      message: 'hi, how are you!'
-    },
+    // {
+    //   role: 'user',
+    //   message: 'hi, how are you!'
+    // },
+    // {
+    //   role: 'assistant',
+    //   message: 'I am fine, Thank you for asking. How about you!'
+    // },
+    // {
+    //   role: 'user',
+    //   message: 'Explain me about python!'
+    // },
+    // {
+    //   role: 'assistant',
+    //   message: "Python is an interpreted, object-oriented, high-level programming language with dynamic semantics. Its high-level built in data structures, combined with dynamic typing and dynamic binding, make it very attractive for Rapid Application Development, as well as for use as a scripting or glue language to connect existing components together. Python's simple, easy to learn syntax emphasizes readability and therefore reduces the cost of program maintenance. Python supports modules and packages, which encourages program modularity and code reuse. The Python interpreter and the extensive standard library are available in source or binary form without charge for all major platforms, and can be freely distributed."
+    // },
+    // {
+    //   role: 'user',
+    //   message: 'hi, how are you!'
+    // },
 
 
   ]);
@@ -66,6 +66,18 @@ function App() {
 
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then((stream) => {
+        const audioContext = new (window.AudioContext)();
+        const mediaStreamSource = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
+        const bufferLength = analyser.fftSize;
+        const dataArray = new Uint8Array(bufferLength);
+
+        mediaStreamSource.connect(analyser);
+
+        let silenceStart: number | null = null;
+        const silenceTimeout = 1000; // 1 second of silence
+        let silenceDetected = false;
         mediaRecorder.current = new MediaRecorder(stream);
 
         mediaRecorder.current.ondataavailable = (event) => {
@@ -82,6 +94,32 @@ function App() {
 
         mediaRecorder.current.start();
         setIsSpeaking(true);
+
+
+        const checkSilence = () => {
+          analyser.getByteFrequencyData(dataArray);
+          const avgVolume = dataArray.reduce((a, b) => a + b) / bufferLength;
+
+          // Adjust the silence threshold based on the environment
+          const silenceThreshold = 10;
+
+          if (avgVolume < silenceThreshold) {
+            if (!silenceStart) silenceStart = Date.now();
+
+            if (Date.now() - silenceStart >= silenceTimeout && !silenceDetected) {
+              silenceDetected = true;
+              handleStopSpeaking(); // Stop the mediaRecorder after 1 second of silence
+              audioContext.close(); // Close the audio context
+              stream.getTracks().forEach(track => track.stop()); // Stop the stream
+            }
+          } else {
+            silenceStart = null;
+          }
+
+          if (!silenceDetected) requestAnimationFrame(checkSilence);
+        };
+
+        checkSilence();
       })
       .catch((error) => {
         console.error('Error accessing microphone:', error);
@@ -135,12 +173,14 @@ function App() {
   useEffect(() => {
     async function speak() {
       try {
-        await avatar.current?.speak({ taskRequest: { text: input, sessionId: data?.sessionId } })
+        await avatar.current?.speak({ taskRequest: { text: input, sessionId: data?.sessionId } });
       } catch (err: any) {
         console.error(err);
       }
     }
+
     speak();
+    // handleStartSpeaking();
   }, [input]);
 
   useEffect(() => {
@@ -149,12 +189,16 @@ function App() {
         const response = await getAccessToken();
         const token = response.data.data.token;
 
+
         if (!avatar.current) {
           avatar.current = new StreamingAvatarApi(
             new Configuration({ accessToken: token })
           );
-
         }
+        avatar.current.addEventHandler("avatar_stop_talking", (e: any) => {
+          console.log("Avatar stopped talking", e);
+          // handleStartSpeaking();
+        });
 
       } catch (error: any) {
         console.error("Error fetching access token:", error);
@@ -167,6 +211,15 @@ function App() {
     }
 
     fetchAccessToken();
+
+    return () => {
+      if (avatar.current) {
+        avatar.current.removeEventHandler("avatar_stop_talking", (e: any) => {
+          console.log("Avatar stopped talking", e);
+          handleStartSpeaking();
+        });
+      }
+    }
   }, []);
 
   async function grab() {
