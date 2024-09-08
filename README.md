@@ -43,5 +43,5 @@ To get started with the project locally, follow these steps:
    ```bash
    npm start
    ```
-5. **Open your browser and go to http://localhost:3000 to see the application in action.**
+5. **Open your browser and go to http://localhost:5173 to see the application in action.**
 
