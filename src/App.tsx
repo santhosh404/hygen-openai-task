@@ -53,8 +53,10 @@ function App() {
     //   message: 'hi, how are you!'
     // },
 
-
   ]);
+
+  const [startAvatarLoading, setStartAvatarLoading] = useState<boolean>(false);
+  const [stopAvatarLoading, setStopAvatarLoading] = useState<boolean>(false);
 
   const apiKey: any = import.meta.env.VITE_OPENAI_API_KEY;
   const openai = new OpenAI({
@@ -62,6 +64,8 @@ function App() {
     dangerouslyAllowBrowser: true,
   });
 
+
+  //Function when user starts speaking
   const handleStartSpeaking = () => {
 
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -76,7 +80,7 @@ function App() {
         mediaStreamSource.connect(analyser);
 
         let silenceStart: number | null = null;
-        const silenceTimeout = 1000; // 1 second of silence
+        const silenceTimeout = 2000; // 1 second of silence
         let silenceDetected = false;
         mediaRecorder.current = new MediaRecorder(stream);
 
@@ -101,7 +105,7 @@ function App() {
           const avgVolume = dataArray.reduce((a, b) => a + b) / bufferLength;
 
           // Adjust the silence threshold based on the environment
-          const silenceThreshold = 10;
+          const silenceThreshold = 20;
 
           if (avgVolume < silenceThreshold) {
             if (!silenceStart) silenceStart = Date.now();
@@ -134,10 +138,12 @@ function App() {
   const handleStopSpeaking = async () => {
     if (mediaRecorder.current) {
       mediaRecorder.current.stop();
+      mediaRecorder.current = null;
       setIsSpeaking(false);
     }
   };
 
+  // Function to transcribe the audio to text and then get the respective response of the given prompt
   async function transcribeAudio(audioBlob: Blob) {
     try {
       // Convert Blob to File
@@ -170,6 +176,7 @@ function App() {
     }
   }
 
+  // useEffect getting triggered when the input state is updated, basically make the avatar to talk
   useEffect(() => {
     async function speak() {
       try {
@@ -180,9 +187,10 @@ function App() {
     }
 
     speak();
-    // handleStartSpeaking();
   }, [input]);
 
+
+  // useEffect called when the component mounts, to fetch the accessToken and creates the new instance of StreamingAvatarApi
   useEffect(() => {
     async function fetchAccessToken() {
       try {
@@ -197,7 +205,9 @@ function App() {
         }
         avatar.current.addEventHandler("avatar_stop_talking", (e: any) => {
           console.log("Avatar stopped talking", e);
-          // handleStartSpeaking();
+          setTimeout(() => {
+            handleStartSpeaking();
+          }, 2000);
         });
 
       } catch (error: any) {
@@ -216,15 +226,26 @@ function App() {
       if (avatar.current) {
         avatar.current.removeEventHandler("avatar_stop_talking", (e: any) => {
           console.log("Avatar stopped talking", e);
-          handleStartSpeaking();
         });
       }
     }
   }, []);
 
+
+  // Function to initiate the avatar
   async function grab() {
     setStartLoading(true);
+    setStartAvatarLoading(true);
     try {
+      const response = await getAccessToken();
+      const token = response.data.data.token;
+
+
+      if (!avatar.current) {
+        avatar.current = new StreamingAvatarApi(
+          new Configuration({ accessToken: token })
+        );
+      }
       const res = await avatar.current!.createStartAvatar(
         {
           newSessionRequest: {
@@ -237,22 +258,42 @@ function App() {
       setData(res);
       setStream(avatar.current!.mediaStream);
       setStartLoading(false);
+      setStartAvatarLoading(false);
       setIsBegin(true);
 
     } catch (error: any) {
-      console.log(error);
+      console.log(error.message);
+      setStartAvatarLoading(false);
+      setStartLoading(false);
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
-        description: error.message,
+        description: error.response.data.message || error.message,
       })
     }
   };
 
-  // async function stop() {
-  //   await avatar.current?.stopAvatar({ stopSessionRequest: { sessionId: data?.sessionId } });
-  // }
 
+  //Function to stop the avatar
+  async function stop() {
+    setStopAvatarLoading(true);
+    try {
+      await avatar.current?.stopAvatar({ stopSessionRequest: { sessionId: data?.sessionId } });
+      handleStopSpeaking();
+      setStopAvatarLoading(false);
+      avatar.current = null;
+    } catch(error: any) {
+      setStopAvatarLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: error.response.data.message || error.message,
+      })
+    }
+  }
+
+
+  // When the user selects the pre-defined prompts, this useEffect will get triggered
   useEffect(() => {
     if (selectedPrompt) {
       setChatMessages(prev => [...prev, { role: 'user', message: selectedPrompt }]);
@@ -272,11 +313,11 @@ function App() {
           description: error.message,
         })
       })
-
     }
-
   }, [selectedPrompt])
 
+
+  // When the stream gets the data, The avatar video will gets played
   useEffect(() => {
     if (stream && mediaStream.current) {
       mediaStream.current.srcObject = stream;
@@ -300,33 +341,37 @@ function App() {
           </div>
 
         ) : (
-          <div className="flex flex-col items-center justify-center p-4 max-w-[1200px] mx-auto">
+          <div className="flex flex-col items-center justify-center p-4 w-full mx-auto">
             {/* {audioSrc && (
               <audio controls>
                 <source src={audioSrc} type="audio/wav" />
                 Your browser does not support the audio element.
               </audio>
             )} */}
-            <div className='adjustableHeight'>
-              <Video ref={mediaStream} />
+            <div className='flex gap-3 justify-center items-center w-full'>
               {
-                chatMessages.length > 0 && (
-                  <ScrollableFeed>
-                    <div className="flex-1 p-4 overflow-y-auto  w-[100%] bg-gray-50 rounded-3xl my-5 h-[400px]">
+                chatMessages.length > 0 ? (
+                  <ScrollableFeed className="w-full">
+                    <div className="flex-1 p-4 overflow-y-auto  w-full bg-gray-50 rounded-3xl h-[400px]">
                       {
-                        chatMessages.map((chatMsg, index) => (
-                          <ChatMessage
-                            key={index}
-                            role={chatMsg.role}
-                            message={chatMsg.message}
-                          />
-                        ))
+                      
+                          chatMessages.map((chatMsg, index) => (
+                            <ChatMessage
+                              key={index}
+                              role={chatMsg.role}
+                              message={chatMsg.message}
+                            />
+                          ))
                       }
-
                     </div>
                   </ScrollableFeed>
+                ) : (
+                    <div className="p-4 overflow-y-auto flex justify-center items-center w-full bg-gray-50 rounded-3xl h-[400px]">
+                        No chats yet
+                    </div>
                 )
               }
+              <Video ref={mediaStream} />
             </div>
 
             <div className='bg-gray-50 flex flex-col justify-center fixed bottom-0 p-2 w-full rounded-lg z-10'>
@@ -337,9 +382,13 @@ function App() {
               <MicButton
                 isSpeaking={isSpeaking}
                 onClick={isSpeaking ? handleStopSpeaking : handleStartSpeaking}
+                stopAvatar={stop}
+                grab={grab}
+                avatarStartLoading={startAvatarLoading}
+                avatarStopLoading={stopAvatarLoading}
               />
             </div>
-            {/* <Button onClick={stop}>Stop Avatar</Button> */}
+
           </div>
         )
       }
