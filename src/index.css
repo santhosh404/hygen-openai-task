@@ -17,3 +17,7 @@
 .adjustableHeight {
   height: calc(100vh - 150px);
 }
+
+.box-shadow {
+  box-shadow: rgba(0, 0, 0, 0.1) 2px 2px 10px 2px inset
+}

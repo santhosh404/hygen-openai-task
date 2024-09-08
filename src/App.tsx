@@ -108,9 +108,11 @@ function App() {
           const silenceThreshold = 20;
 
           if (avgVolume < silenceThreshold) {
+            console.log('here');
             if (!silenceStart) silenceStart = Date.now();
 
             if (Date.now() - silenceStart >= silenceTimeout && !silenceDetected) {
+              console.log('silence detected!');
               silenceDetected = true;
               handleStopSpeaking(); // Stop the mediaRecorder after 1 second of silence
               audioContext.close(); // Close the audio context
@@ -240,12 +242,19 @@ function App() {
       const response = await getAccessToken();
       const token = response.data.data.token;
 
-
+    
       if (!avatar.current) {
         avatar.current = new StreamingAvatarApi(
           new Configuration({ accessToken: token })
         );
       }
+      avatar.current.addEventHandler("avatar_stop_talking", (e: any) => {
+        console.log("Avatar stopped talking", e);
+        setTimeout(() => {
+          handleStartSpeaking();
+        }, 2000);
+      });
+      
       const res = await avatar.current!.createStartAvatar(
         {
           newSessionRequest: {
@@ -348,11 +357,11 @@ function App() {
                 Your browser does not support the audio element.
               </audio>
             )} */}
-            <div className='flex gap-3 justify-center items-center w-full'>
+            <div className='flex gap-3 justify-center items-center w-full '>
               {
                 chatMessages.length > 0 ? (
-                  <ScrollableFeed className="w-full">
-                    <div className="flex-1 p-4 overflow-y-auto  w-full bg-gray-50 rounded-3xl h-[400px]">
+                  <ScrollableFeed className="w-full ">
+                    <div className=" flex-1 p-4 overflow-y-auto  w-full bg-gray-50 rounded-3xl h-[400px] box-shadow">
                       {
                       
                           chatMessages.map((chatMsg, index) => (
@@ -366,7 +375,7 @@ function App() {
                     </div>
                   </ScrollableFeed>
                 ) : (
-                    <div className="p-4 overflow-y-auto flex justify-center items-center w-full bg-gray-50 rounded-3xl h-[400px]">
+                    <div className="p-4 overflow-y-auto flex justify-center items-center w-full bg-gray-50 rounded-3xl h-[400px] box-shadow">
                         No chats yet
                     </div>
                 )
