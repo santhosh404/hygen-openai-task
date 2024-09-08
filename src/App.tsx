@@ -57,6 +57,8 @@ function App() {
 
   const [startAvatarLoading, setStartAvatarLoading] = useState<boolean>(false);
   const [stopAvatarLoading, setStopAvatarLoading] = useState<boolean>(false);
+  let timeout: any;
+
 
   const apiKey: any = import.meta.env.VITE_OPENAI_API_KEY;
   const openai = new OpenAI({
@@ -80,7 +82,7 @@ function App() {
         mediaStreamSource.connect(analyser);
 
         let silenceStart: number | null = null;
-        const silenceTimeout = 2000; // 1 second of silence
+        const silenceTimeout = 2000; // 2 second of silence
         let silenceDetected = false;
         mediaRecorder.current = new MediaRecorder(stream);
 
@@ -205,12 +207,9 @@ function App() {
             new Configuration({ accessToken: token })
           );
         }
-        avatar.current.addEventHandler("avatar_stop_talking", (e: any) => {
-          console.log("Avatar stopped talking", e);
-          setTimeout(() => {
-            handleStartSpeaking();
-          }, 2000);
-        });
+        // Clear any existing event handlers to prevent duplication
+        avatar.current.removeEventHandler("avatar_stop_talking", handleAvatarStopTalking);
+        avatar.current.addEventHandler("avatar_stop_talking", handleAvatarStopTalking);
 
       } catch (error: any) {
         console.error("Error fetching access token:", error);
@@ -225,187 +224,196 @@ function App() {
     fetchAccessToken();
 
     return () => {
+      // Cleanup event handler and timeout
       if (avatar.current) {
-        avatar.current.removeEventHandler("avatar_stop_talking", (e: any) => {
-          console.log("Avatar stopped talking", e);
-        });
+        avatar.current.removeEventHandler("avatar_stop_talking", handleAvatarStopTalking);
       }
+      clearTimeout(timeout);
     }
+
   }, []);
 
+// Avatar stop talking event handler
+const handleAvatarStopTalking = (e: any) => {
+  console.log("Avatar stopped talking", e);
+  timeout = setTimeout(() => {
+    handleStartSpeaking();
+  }, 2000);
+};
 
-  // Function to initiate the avatar
-  async function grab() {
-    setStartLoading(true);
-    setStartAvatarLoading(true);
-    try {
-      const response = await getAccessToken();
-      const token = response.data.data.token;
 
-    
-      if (!avatar.current) {
-        avatar.current = new StreamingAvatarApi(
-          new Configuration({ accessToken: token })
-        );
-      }
-      avatar.current.addEventHandler("avatar_stop_talking", (e: any) => {
-        console.log("Avatar stopped talking", e);
-        setTimeout(() => {
-          handleStartSpeaking();
-        }, 2000);
-      });
-      
-      const res = await avatar.current!.createStartAvatar(
-        {
-          newSessionRequest: {
-            quality: "low",
-            avatarName: import.meta.env.VITE_HEYGEN_AVATARID,
-            voice: { voiceId: import.meta.env.VITE_HEYGEN_VOICEID }
-          }
-        },
+// Function to initiate the avatar
+async function grab() {
+  setStartLoading(true);
+  setStartAvatarLoading(true);
+  try {
+    const response = await getAccessToken();
+    const token = response.data.data.token;
+
+
+    if (!avatar.current) {
+      avatar.current = new StreamingAvatarApi(
+        new Configuration({ accessToken: token })
       );
-      setData(res);
-      setStream(avatar.current!.mediaStream);
-      setStartLoading(false);
-      setStartAvatarLoading(false);
-      setIsBegin(true);
-
-    } catch (error: any) {
-      console.log(error.message);
-      setStartAvatarLoading(false);
-      setStartLoading(false);
-      toast({
-        variant: "destructive",
-        title: "Uh oh! Something went wrong.",
-        description: error.response.data.message || error.message,
-      })
     }
-  };
+    // avatar.current.addEventHandler("avatar_stop_talking", (e: any) => {
+    //   console.log("Avatar stopped talking", e);
+    //   setTimeout(() => {
+    //     handleStartSpeaking();
+    //   }, 2000);
+    // });
 
-
-  //Function to stop the avatar
-  async function stop() {
-    setStopAvatarLoading(true);
-    try {
-      await avatar.current?.stopAvatar({ stopSessionRequest: { sessionId: data?.sessionId } });
-      handleStopSpeaking();
-      setStopAvatarLoading(false);
-      avatar.current = null;
-    } catch(error: any) {
-      setStopAvatarLoading(false);
-      toast({
-        variant: "destructive",
-        title: "Uh oh! Something went wrong.",
-        description: error.response.data.message || error.message,
-      })
-    }
-  }
-
-
-  // When the user selects the pre-defined prompts, this useEffect will get triggered
-  useEffect(() => {
-    if (selectedPrompt) {
-      setChatMessages(prev => [...prev, { role: 'user', message: selectedPrompt }]);
-      openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'user', content: selectedPrompt }
-        ]
-      }).then(aiResponse => {
-        setChatMessages(prev => [...prev, { role: 'assistant', message: aiResponse.choices[0].message.content || '' }]);
-        setInput(aiResponse.choices[0].message.content || '');
-      }).catch(error => {
-        console.log(error);
-        toast({
-          variant: "destructive",
-          title: "Uh oh! Something went wrong.",
-          description: error.message,
-        })
-      })
-    }
-  }, [selectedPrompt])
-
-
-  // When the stream gets the data, The avatar video will gets played
-  useEffect(() => {
-    if (stream && mediaStream.current) {
-      mediaStream.current.srcObject = stream;
-      mediaStream.current.onloadedmetadata = () => {
-        mediaStream.current!.play();
-      };
-    }
-  }, [stream]);
-
-  return (
-    <>
-      <Toaster />
+    const res = await avatar.current!.createStartAvatar(
       {
-        !isBegin ? (
-          <div>
-            <LandingComponent
-              grab={grab}
-              startLoading={startLoading}
-            />
+        newSessionRequest: {
+          quality: "low",
+          avatarName: import.meta.env.VITE_HEYGEN_AVATARID,
+          voice: { voiceId: import.meta.env.VITE_HEYGEN_VOICEID }
+        }
+      },
+    );
+    setData(res);
+    setStream(avatar.current!.mediaStream);
+    setStartLoading(false);
+    setStartAvatarLoading(false);
+    setIsBegin(true);
 
-          </div>
+  } catch (error: any) {
+    console.log(error.message);
+    setStartAvatarLoading(false);
+    setStartLoading(false);
+    toast({
+      variant: "destructive",
+      title: "Uh oh! Something went wrong.",
+      description: error.response.data.message || error.message,
+    })
+  }
+};
 
-        ) : (
-          <div className="flex flex-col items-center justify-center p-4 w-full mx-auto">
-            {/* {audioSrc && (
+
+//Function to stop the avatar
+async function stop() {
+  setStopAvatarLoading(true);
+  try {
+    await avatar.current?.stopAvatar({ stopSessionRequest: { sessionId: data?.sessionId } });
+    // handleStopSpeaking();
+    setStopAvatarLoading(false);
+    avatar.current = null;
+  } catch (error: any) {
+    setStopAvatarLoading(false);
+    toast({
+      variant: "destructive",
+      title: "Uh oh! Something went wrong.",
+      description: error.response.data.message || error.message,
+    })
+  }
+}
+
+
+// When the user selects the pre-defined prompts, this useEffect will get triggered
+useEffect(() => {
+  if (selectedPrompt) {
+    setChatMessages(prev => [...prev, { role: 'user', message: selectedPrompt }]);
+    openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'user', content: selectedPrompt }
+      ]
+    }).then(aiResponse => {
+      setChatMessages(prev => [...prev, { role: 'assistant', message: aiResponse.choices[0].message.content || '' }]);
+      setInput(aiResponse.choices[0].message.content || '');
+    }).catch(error => {
+      console.log(error);
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: error.message,
+      })
+    })
+  }
+}, [selectedPrompt])
+
+
+// When the stream gets the data, The avatar video will gets played
+useEffect(() => {
+  if (stream && mediaStream.current) {
+    mediaStream.current.srcObject = stream;
+    mediaStream.current.onloadedmetadata = () => {
+      mediaStream.current!.play();
+    };
+  }
+}, [stream]);
+
+return (
+  <>
+    <Toaster />
+    {
+      !isBegin ? (
+        <div>
+          <LandingComponent
+            grab={grab}
+            startLoading={startLoading}
+          />
+
+        </div>
+
+      ) : (
+        <div className="flex flex-col items-center justify-center p-4 w-full mx-auto">
+          {/* {audioSrc && (
               <audio controls>
                 <source src={audioSrc} type="audio/wav" />
                 Your browser does not support the audio element.
               </audio>
             )} */}
-            <div className='flex gap-3 justify-center items-center w-full '>
-              {
-                chatMessages.length > 0 ? (
-                  <ScrollableFeed className="w-full ">
-                    <div className=" flex-1 p-4 overflow-y-auto  w-full bg-gray-50 rounded-3xl h-[400px] box-shadow">
-                      {
-                      
-                          chatMessages.map((chatMsg, index) => (
-                            <ChatMessage
-                              key={index}
-                              role={chatMsg.role}
-                              message={chatMsg.message}
-                            />
-                          ))
-                      }
-                    </div>
-                  </ScrollableFeed>
-                ) : (
-                    <div className="p-4 overflow-y-auto flex justify-center items-center w-full bg-gray-50 rounded-3xl h-[400px] box-shadow">
-                        No chats yet
-                    </div>
-                )
-              }
-              <Video ref={mediaStream} />
-            </div>
+          <div className='flex gap-3 justify-center items-center w-full '>
+            {
+              chatMessages.length > 0 ? (
+                <ScrollableFeed className="w-full ">
+                  <div className=" flex-1 p-4 overflow-y-auto  w-full bg-gray-50 rounded-3xl h-[400px] box-shadow">
+                    {
 
-            <div className='bg-gray-50 flex flex-col justify-center fixed bottom-0 p-2 w-full rounded-lg z-10'>
-
-              <Badges
-                setSelectedPrompt={setSelectedPrompt}
-              />
-              <MicButton
-                isSpeaking={isSpeaking}
-                onClick={isSpeaking ? handleStopSpeaking : handleStartSpeaking}
-                stopAvatar={stop}
-                grab={grab}
-                avatarStartLoading={startAvatarLoading}
-                avatarStopLoading={stopAvatarLoading}
-              />
-            </div>
-
+                      chatMessages.map((chatMsg, index) => (
+                        <ChatMessage
+                          key={index}
+                          role={chatMsg.role}
+                          message={chatMsg.message}
+                        />
+                      ))
+                    }
+                  </div>
+                </ScrollableFeed>
+              ) : (
+                <div className="p-4 overflow-y-auto flex justify-center items-center w-full bg-gray-50 rounded-3xl h-[400px] box-shadow">
+                  No chats yet
+                </div>
+              )
+            }
+            <Video ref={mediaStream} />
           </div>
-        )
-      }
+
+          <div className='bg-gray-50 flex flex-col justify-center fixed bottom-0 p-2 w-full rounded-lg z-10'>
+
+            <Badges
+              setSelectedPrompt={setSelectedPrompt}
+            />
+            <MicButton
+              isSpeaking={isSpeaking}
+              onClick={isSpeaking ? handleStopSpeaking : handleStartSpeaking}
+              stopAvatar={stop}
+              grab={grab}
+              avatarStartLoading={startAvatarLoading}
+              avatarStopLoading={stopAvatarLoading}
+            />
+          </div>
+
+        </div>
+      )
+    }
 
 
-    </>
+  </>
 
-  );
+);
 }
 
 export default App;
