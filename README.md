@@ -1,50 +1,47 @@
-# React + TypeScript + Vite
+# Real-Time Avatar Interaction
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Welcome to the Real-Time Avatar Interaction project! This application creates an interactive experience between the user and a real-time avatar using Hygen's advanced avatar technology and OpenAI's language model. The project enables users to converse with an avatar in real-time, converting speech to text and generating responses through OpenAI's GPT-3.5-turbo.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Real-Time Interaction:** Engage in live conversations with a virtual avatar.
+- **Speech-to-Text Conversion:** Convert spoken words into text using OpenAI's GPT-3.5-turbo.
+- **Avatar Responses:** Receive responses from the avatar based on the text input.
+- **Seamless Experience:** Enjoy a fluid interaction where the avatar's responses are delivered in real-time.
 
-## Expanding the ESLint configuration
+## Technologies Used
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **React:** For building the user interface.
+- **TypeScript:** To enhance code quality and maintainability.
+- **Tailwind CSS:** For styling and creating a responsive design.
+- **Shadcn:** For additional UI components and enhancements.
+- **OpenAI:** For text generation and processing using GPT-3.5-turbo.
+- **Streaming Avatar API:** To integrate and control the avatar's real-time responses.
 
-- Configure the top-level `parserOptions` property like this:
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Getting Started
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+To get started with the project locally, follow these steps:
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+1. **Clone the repository:**
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+   ```bash
+   git clone https://github.com/santhosh404/hygen-openai-task.git
+   ```
+2. **Navigate to the project directory:**
+
+   ```bash
+   cd hygen-openai-task
+   ```
+3. **Install the dependencies:**
+
+   ```bash
+   npm install
+   ```
+4. **Start the development server:**
+
+   ```bash
+   npm start
+   ```
+5. **Open your browser and go to http://localhost:5173 to see the application in action.**
+
