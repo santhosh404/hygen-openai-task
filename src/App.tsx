@@ -106,7 +106,7 @@ function App() {
           analyser.getByteFrequencyData(dataArray);
           const avgVolume = dataArray.reduce((a, b) => a + b) / bufferLength;
 
-          // Adjust the silence threshold based on the environment
+          // Silence threshold
           const silenceThreshold = 20;
 
           if (avgVolume < silenceThreshold) {
@@ -116,7 +116,7 @@ function App() {
             if (Date.now() - silenceStart >= silenceTimeout && !silenceDetected) {
               console.log('silence detected!');
               silenceDetected = true;
-              handleStopSpeaking(); // Stop the mediaRecorder after 1 second of silence
+              handleStopSpeaking(); 
               audioContext.close(); // Close the audio context
               stream.getTracks().forEach(track => track.stop()); // Stop the stream
             }
