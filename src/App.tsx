@@ -11,7 +11,7 @@ import ScrollableFeed from 'react-scrollable-feed';
 import { Badges } from './components/reusable/Badges';
 import { Toaster } from "@/components/ui/toaster"
 
-type ChatMessageType = {
+interface ChatMessageType  {
   role: string;
   message: string;
 };
