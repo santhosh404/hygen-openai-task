@@ -72,13 +72,13 @@ function App() {
 
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then((stream) => {
-        const audioContext = new (window.AudioContext)();
+        const audioContext = new (window.AudioContext)(); 
         const mediaStreamSource = audioContext.createMediaStreamSource(stream);
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = 512;
         const bufferLength = analyser.fftSize;
         const dataArray = new Uint8Array(bufferLength);
-
+      
         mediaStreamSource.connect(analyser);
 
         let silenceStart: number | null = null;
@@ -105,6 +105,7 @@ function App() {
         const checkSilence = () => {
           analyser.getByteFrequencyData(dataArray);
           const avgVolume = dataArray.reduce((a, b) => a + b) / bufferLength;
+
 
           // Silence threshold
           const silenceThreshold = 20;
@@ -207,6 +208,7 @@ function App() {
             new Configuration({ accessToken: token })
           );
         }
+        console.log(avatar.current)
         // Clear any existing event handlers to prevent duplication
         avatar.current.removeEventHandler("avatar_stop_talking", handleAvatarStopTalking);
         avatar.current.addEventHandler("avatar_stop_talking", handleAvatarStopTalking);
@@ -272,6 +274,7 @@ async function grab() {
         }
       },
     );
+    console.log(res);
     setData(res);
     setStream(avatar.current!.mediaStream);
     setStartLoading(false);
@@ -337,6 +340,8 @@ useEffect(() => {
 // When the stream gets the data, The avatar video will gets played
 useEffect(() => {
   if (stream && mediaStream.current) {
+    console.log(stream);
+    console.log(mediaStream.current);
     mediaStream.current.srcObject = stream;
     mediaStream.current.onloadedmetadata = () => {
       mediaStream.current!.play();

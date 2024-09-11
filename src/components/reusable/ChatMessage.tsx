@@ -1,14 +1,14 @@
 // src/components/ChatMessage.tsx
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 
-type ChatMessageProps = {
+interface ChatMessageProps {
     role: string;
     message: string;
 };
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ role, message }) => {
+const ChatMessage=({ role, message }: ChatMessageProps) => {
 
     const messageRef = useRef<HTMLDivElement>(null);
 

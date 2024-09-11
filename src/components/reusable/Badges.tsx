@@ -8,7 +8,7 @@ const badges: string[] = [
     "Random fun facts",
     "Personal finance advice",
 ]
-type BadgeProps = {
+interface BadgeProps {
     setSelectedPrompt: (badge: string) => void;
 }
 export const Badges: React.FC<BadgeProps> = ({ setSelectedPrompt }) => {
@@ -25,6 +25,4 @@ export const Badges: React.FC<BadgeProps> = ({ setSelectedPrompt }) => {
             </div>
         </div>
     )
-
-
 }

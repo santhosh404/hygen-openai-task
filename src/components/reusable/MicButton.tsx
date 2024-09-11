@@ -1,10 +1,8 @@
-// src/components/MicButton.tsx
-import React from 'react';
 import { FaMicrophone } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
-type MicButtonProps = {
+interface MicButtonProps {
   isSpeaking: boolean;
   onClick: () => void;
   stopAvatar: () => void;
@@ -13,7 +11,7 @@ type MicButtonProps = {
   avatarStopLoading: boolean;
 };
 
-const MicButton: React.FC<MicButtonProps> = ({ isSpeaking, onClick, stopAvatar, grab, avatarStartLoading, avatarStopLoading }) => (
+const MicButton = ({ isSpeaking, onClick, stopAvatar, grab, avatarStartLoading, avatarStopLoading }: MicButtonProps) => (
   <div className="  flex items-center justify-center w-[100%]  p-5">
     <div className="ml-4 text-gray-700 flex flex-col gap-2 items-center">
       <Button

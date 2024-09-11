@@ -1,14 +1,13 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2 } from "lucide-react"
 
-type LandingPageProps = {
+interface LandingPageProps {
     grab: () => void;
     startLoading: boolean;
 }
 
-export const LandingComponent: React.FC<LandingPageProps> = ({ grab, startLoading }) => {
+export const LandingComponent = ({ grab, startLoading }: LandingPageProps) => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <Card className="max-w-lg w-full p-6 shadow-lg">
@@ -25,7 +24,7 @@ export const LandingComponent: React.FC<LandingPageProps> = ({ grab, startLoadin
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center mt-4">
-                    <Button onClick={grab} className="bg-blue-500 hover:bg-blue-600 text-white" disabled={startLoading}>
+                    <Button onClick={grab} className="bg-blue-600 hover:bg-blue-500 text-white" disabled={startLoading}>
                         {
                             startLoading && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -33,6 +32,7 @@ export const LandingComponent: React.FC<LandingPageProps> = ({ grab, startLoadin
                         }
                         Get Started
                     </Button>
+                    
                 </CardContent>
             </Card>
         </div>
